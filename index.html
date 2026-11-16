@@ -60,7 +60,7 @@ function parseMessage(){
 }
 function useParsed(){
  if(!parsed?.amount){alert('No pude detectar un valor fiable. Regístralo manualmente.');return}
- if(parsed.duplicate&&!confirm('Este mensaje parece duplicado. ¿Quieres continuar de todos modos?'))return;
+ if(parsed.duplicate){alert('Este mensaje ya fue importado. No se guardará nuevamente.');return;}
  openForm(parsed.type);document.getElementById('description').value=parsed.description;document.getElementById('amount').value=parsed.amount;document.getElementById('category').value=parsed.category;document.getElementById('currency').value=parsed.currency;
  const idx=data.accounts.findIndex(a=>a.name===parsed.bank);if(idx>=0)document.getElementById('account').value=idx;
  document.getElementById('notes').value='Importado de mensaje. Entidad detectada: '+parsed.bank;
