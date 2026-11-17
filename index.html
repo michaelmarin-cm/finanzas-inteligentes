@@ -54,7 +54,7 @@ else if(/uber|taxi|peaje|transporte|parqueadero/.test(low))category='Transporte'
  else if(/servicio p[uú]blico|energ[ií]a|agua|internet|telefon[ií]a/.test(low))category='Servicios';
  else if(/inter[eé]s|cuota de manejo|tarjeta de cr[eé]dito|pago de tarjeta/.test(low))category='Deudas';
  else if(/rendimiento|intereses recibidos|cdt|inversi[oó]n/.test(low))category='Inversiones';
- else if(type==='income')category='Otros ingresos';
+ else if(type==='income' && category==='Otros')category='Otros ingresos';
 const dateMatch=raw.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
 let smsDate=dateNow();
 if(dateMatch){
