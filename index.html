@@ -53,9 +53,17 @@ else if(/uber|taxi|peaje|transporte|parqueadero/.test(low))category='Transporte'
  else if(/inter[eé]s|cuota de manejo|tarjeta de cr[eé]dito|pago de tarjeta/.test(low))category='Deudas';
  else if(/rendimiento|intereses recibidos|cdt|inversi[oó]n/.test(low))category='Inversiones';
  else if(type==='income')category='Otros ingresos';
- const fingerprint=raw.toLowerCase().replace(/\s+/g,' ').trim();
+const dateMatch=raw.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
+let smsDate=dateNow();
+if(dateMatch){
+ const dd=Number(dateMatch[1]),mm=Number(dateMatch[2]),yy=Number(dateMatch[3]);
+ const candidate=new Date(yy,mm-1,dd);
+ if(candidate.getFullYear()===yy&&candidate.getMonth()===mm-1&&candidate.getDate()===dd){
+  smsDate=yy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+ }
+} const fingerprint=raw.toLowerCase().replace(/\s+/g,' ').trim();
  const duplicate=data.movements.some(x=>x.fingerprint===fingerprint);
- parsed={amount,type,category,description:merchant||raw.slice(0,70),merchant,bank,currency:/\busd\b|d[oó]lares/.test(low)?'USD':'COP',fingerprint,raw,duplicate};
+ parsed={amount,type,category,description:merchant||raw.slice(0,70),merchant,bank,currency:/\busd\b|d[óo]lares/.test(low)?'USD':'COP',date:smsDate,fingerprint,raw,duplicate};
  document.getElementById('parsedText').innerHTML=`<b>${type==='income'?'Ingreso':type==='transfer'?'Posible transferencia':type==='refund'?'Devolución':'Posible gasto'} · ${amount?fmt(amount,parsed.currency):'Valor no detectado'}</b><p>Entidad: ${esc(bank)}<br>Comercio: ${esc(merchant||'No identificado')}<br>Categoría sugerida: ${esc(category)}<br>Moneda sugerida: ${esc(parsed.currency)}</p>${duplicate?'<p style="color:var(--red)"><b>Posible duplicado:</b> ya existe un movimiento con el mismo mensaje.</p>':''}<small class="muted">Reconocimiento por reglas locales; puede equivocarse. Verifica los datos antes de guardar.</small>`;
  document.getElementById('parseResult').classList.remove('hidden');
 }
