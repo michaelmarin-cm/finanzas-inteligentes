@@ -45,7 +45,8 @@ function parseMessage(){
  let merchant=merchantMatch?(merchantMatch[1]||merchantMatch[2]).trim():'';
 if(/n[oó]mina/i.test(raw))merchant='Nómina - '+merchant;
  let category='Otros';
- if(/mercado|supermercado|[ée]xito|carulla|d1|ara|ol[ií]mpica/.test(low))category='Alimentación';
+ if(/n[oó]mina|salario|sueldo|pago de n[oó]mina/.test(low))category='Salario';
+else if(/gasolina|combustible|gasolinera|estaci[oó]n de servicio|\beds\b|terpel|primax|biomax|texaco|coesco|eds\s|distribuidora de combustible/.test(low))category='Combustible';
  else if(/gasolina|combustible|gasolinera|estaci[oó]n de servicio|\beds\b|terpel|primax|biomax|texaco|coesco/.test(low))category='Combustible';
 else if(/uber|taxi|peaje|transporte|parqueadero/.test(low))category='Transporte';
  else if(/restaurante|comida|domicilio|rappi|didi food/.test(low))category='Restaurantes';
