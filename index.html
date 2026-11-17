@@ -41,8 +41,8 @@ function parseMessage(){
  const isCardPayment=/pagaste tu tarjeta|pago de tarjeta|pago tarjeta|abono a tarjeta/.test(low);
  let type=isRefund?'refund':isTransfer?'transfer':isIncome?'income':'expense';
  if(isCardPayment)type='expense';
- const merchantMatch=raw.match(/(?:en|comercio|establecimiento|compra en)\s+([A-ZÁÉÍÓÚÑ0-9][A-ZÁÉÍÓÚÑa-záéíóúñ0-9 .&'-]{2,35})/i);
- const merchant=merchantMatch?merchantMatch[1].trim().replace(/[.,;]+$/,''):'';
+ const merchantMatch=raw.match(/n[oó]mina\s+de\s+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ ]{2,45}?)(?=\s+por\s+\$)|(?:en|comercio|establecimiento|compra en)\s+([A-ZÁÉÍÓÚÑ0-9][A-ZÁÉÍÓÚÑa-záéíóúñ0-9 .&'-]{2,35})/i);
+ const merchant=merchantMatch?(merchantMatch[1]||merchantMatch[2]).trim():'';
  let category='Otros';
  if(/mercado|supermercado|[ée]xito|carulla|d1|ara|ol[ií]mpica/.test(low))category='Alimentación';
  else if(/gasolina|combustible|gasolinera|estaci[oó]n de servicio|\beds\b|terpel|primax|biomax|texaco|coesco/.test(low))category='Combustible';
