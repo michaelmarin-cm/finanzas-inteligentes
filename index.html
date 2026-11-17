@@ -45,7 +45,8 @@ function parseMessage(){
  const merchant=merchantMatch?merchantMatch[1].trim().replace(/[.,;]+$/,''):'';
  let category='Otros';
  if(/mercado|supermercado|[ée]xito|carulla|d1|ara|ol[ií]mpica/.test(low))category='Alimentación';
- else if(/gasolina|combustible|uber|taxi|peaje|transporte|parqueadero/.test(low))category='Transporte';
+ else if(/gasolina|combustible|gasolinera|estaci[oó]n de servicio|\beds\b|terpel|primax|biomax|texaco|coesco/.test(low))category='Combustible';
+else if(/uber|taxi|peaje|transporte|parqueadero/.test(low))category='Transporte';
  else if(/restaurante|comida|domicilio|rappi|didi food/.test(low))category='Restaurantes';
  else if(/netflix|spotify|cine|juego|entretenimiento/.test(low))category='Entretenimiento';
  else if(/servicio p[uú]blico|energ[ií]a|agua|internet|telefon[ií]a/.test(low))category='Servicios';
