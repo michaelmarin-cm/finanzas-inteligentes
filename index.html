@@ -50,6 +50,43 @@ document.getElementById('dailyExpenses').innerHTML=dailySorted.length?
 `<p><b>Día de mayor gasto:</b> ${highestDay[0]} · ${fmt(highestDay[1])}</p>`+
 dailySorted.map(([day,value])=>`<div class="row" style="margin:12px 0"><span>${day}</span><b>${fmt(value)}</b></div>`).join(''):
 '<div class="empty">No hay gastos registrados este mes</div>';document.getElementById('account').innerHTML=options();document.getElementById('toAccount').innerHTML=options()}
+
+function askFinance(){
+ const question=document.getElementById('botQuestion').value.toLowerCase().trim();
+ const answer=document.getElementById('botAnswer');
+ if(!question){
+  answer.textContent='Escríbeme una pregunta primero.';
+  return;
+ }
+ const movements=data.movements;
+ const expenses=movements.filter(x=>x.type==='expense');
+ const incomes=movements.filter(x=>['income','refund'].includes(x.type));
+ const fmtBot=n=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n);
+ let result='';
+
+ if(/día|dia/.test(question)&&/gast|mayor|más|mas/.test(question)){
+  const daily={};
+  expenses.forEach(x=>daily[x.date]=(daily[x.date]||0)+x.amount);
+  const best=Object.entries(daily).sort((a,b)=>b[1]-a[1])[0];
+  result=best?'Tu día de mayor gasto fue el '+best[0]+' con '+fmtBot(best[1])+'.':'Todavía no tienes gastos registrados.';
+ }
+ else if(/categor[ií]a/.test(question)){
+  const cats={};
+  expenses.forEach(x=>cats[x.category]=(cats[x.category]||0)+x.amount);
+  const best=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+  result=best?'Tu categoría con más gastos es '+best[0]+', con '+fmtBot(best[1])+'.':'No hay gastos registrados.';
+ }
+ else if(/ingres|recib/.test(question)){
+  result='Tus ingresos registrados suman '+fmtBot(incomes.reduce((s,x)=>s+x.amount,0))+'.';
+ }
+ else if(/gast|compr|total/.test(question)){
+  result='Tus gastos registrados suman '+fmtBot(expenses.reduce((s,x)=>s+x.amount,0))+'.';
+ }
+ else{
+  result='Puedo decirte cuánto has gastado, cuánto has recibido, cuál fue tu día de mayor gasto y qué categoría tiene más gastos.';
+ }
+ answer.textContent=result;
+}
 function itemHTML(x){let sign=['income','refund'].includes(x.type)?'+':'−';let cls=sign==='+'?'green':'red';let a=data.accounts[x.account]||{name:'Cuenta'};return `<div class="movement row"><div class="left"><div class="ico">${x.type==='income'?'↙':x.type==='transfer'?'⇄':x.type==='investment'?'▤':'↗'}</div><div><strong>${esc(x.description)}</strong><small>${esc(x.category)} · ${esc(a.name)} · ${esc(x.date)}</small></div></div><div class="amount ${cls}">${sign}${fmt(x.amount,x.currency)}</div></div>`}
 function openForm(type='expense'){show('form');document.getElementById('type').value=type;document.getElementById('description').value='';document.getElementById('amount').value='';document.getElementById('date').value=dateNow();document.getElementById('notes').value='';adjustForm()}function adjustForm(){let t=document.getElementById('type').value;document.getElementById('toWrap').classList.toggle('hidden',t!=='transfer');document.getElementById('formTitle').textContent=t==='income'?'Registrar ingreso':t==='transfer'?'Transferir entre cuentas':t==='investment'?'Registrar inversión':'Registrar gasto'}function saveMovement(){let type=document.getElementById('type').value,amount=Number(document.getElementById('amount').value),account=Number(document.getElementById('account').value),to=Number(document.getElementById('toAccount').value),currency=document.getElementById('currency').value;if(!amount||amount<0||!document.getElementById('description').value.trim()){alert('Completa descripción y valor.');return}let x={id:Date.now(),type,amount,account,toAccount:to,currency,description:document.getElementById('description').value.trim(),category:document.getElementById('category').value,date:document.getElementById('date').value||dateNow(),notes:document.getElementById('notes').value,fingerprint:window.pendingFingerprint||null};window.pendingFingerprint=null;data.movements.push(x);if(type==='income'||type==='refund')data.accounts[account].balance+=amount;else if(type==='expense'||type==='investment')data.accounts[account].balance-=amount;else if(type==='transfer'){data.accounts[account].balance-=amount;data.accounts[to].balance+=amount}persist();show('dashboard')}
 function parseMessage(){
