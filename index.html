@@ -31,10 +31,10 @@ function parseMessage(){
  const low=raw.toLowerCase();
  const bank=/bancolombia|banco de colombia/.test(low)?'Bancolombia':/finandina/.test(low)?'Finandina':/nequi/.test(low)?'Nequi':/\bnu\b|nu bank/.test(low)?'Nu':'Entidad no identificada';
  // Busca importes con símbolo, separador de miles colombiano o decimales.
- const moneyPatterns=[/\bCOP\s*\$?\s*\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?\b/i,/(?:\$\s*)\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?/,/\b\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?\s*(?:cop|pesos)?\b/i,/(?:\$\s*)\d+(?:,\d{1,2})?/];
+ const moneyPatterns=[/\$\s*\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?/,/\bCOP\s*\$?\s*\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?\b/i,/(?:\$\s*)\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?/,/\b\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?\s*(?:cop|pesos)?\b/i,/(?:\$\s*)\d+(?:,\d{1,2})?/];
  let token=''; for(const re of moneyPatterns){const m=raw.match(re);if(m){token=m[0];break}}
  let amount=0;
- if(token){let n=token.replace(/[^\d.,]/g,'');if(n.includes('.')&&n.includes(','))n=n.replace(/\./g,'').replace(',','.');else if(n.includes(','))n=n.replace(',','.');else if((n.match(/\./g)||[]).length>0)n=n.replace(/\./g,'');amount=Number(n)}
+ if(token){let n=token.replace(/[^\d.,]/g,'');if(n.includes(',')&&n.includes('.')){if(n.lastIndexOf('.')>n.lastIndexOf(','))n=n.replace(/,/g,'');else n=n.replace(/\./g,'').replace(',','.')}else if(n.includes(',')){let p=n.split(',');n=p.length===2&&p[1].length<=2?p[0].replace(/\./g,'')+'.'+p[1]:n.replace(/,/g,'')}else if((n.match(/\./g)||[]).length>1)n=n.replace(/\./g,'');else if(n.includes('.')){let p=n.split('.');if(p[1].length===3)n=n.replace(/\./g,'')}amount=Number(n)}
  const isTransfer=/transferencia|traslado|enviaste|env[ií]o a/.test(low);
  const isIncome=/recibiste|te enviaron|abon[oó]|consignaci[oó]n|transferencia recibida|pago recibido|ingreso/.test(low);
  const isRefund=/devoluci[oó]n|revers[oó]|reembolso/.test(low);
