@@ -4,8 +4,29 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101827"><title>Finanzas Inteligentes</title>
 <style>
 :root{--bg:#0b1220;--panel:#121d2e;--panel2:#1a2940;--text:#f4f7fb;--muted:#9aabc1;--line:#26364d;--green:#38c98a;--red:#ff727b;--blue:#75a9ff}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:88px}.app{max-width:720px;margin:auto;padding:20px 16px 30px}.top{display:flex;justify-content:space-between;align-items:center;margin:8px 0 22px}.brand{font-size:13px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.top h1{font-size:25px;margin:5px 0}.pill{border:1px solid var(--line);border-radius:99px;padding:8px 11px;color:var(--muted);font-size:12px}.hero{background:linear-gradient(135deg,#1a3550,#17263c);border:1px solid #294765;border-radius:22px;padding:20px;margin-bottom:14px}.hero small,.muted{color:var(--muted)}.balance{font-size:34px;font-weight:750;margin:8px 0 18px;letter-spacing:-1px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#ffffff0b;border:1px solid #ffffff12;border-radius:15px;padding:13px}.stat small{display:block;color:#b6c5d8;font-size:12px}.stat strong{display:block;font-size:18px;margin-top:6px}.green{color:var(--green)}.red{color:var(--red)}.section{margin-top:23px}.sectionhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.section h2{font-size:17px;margin:0}.link{color:var(--blue);background:none;border:0;font:inherit;padding:5px}.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.quick button{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:13px 4px;color:var(--text);font-size:12px}.quick b{display:block;font-size:21px;margin-bottom:7px}.card{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:15px}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.movement{padding:13px 0;border-bottom:1px solid var(--line)}.movement:last-child{border:0}.ico{width:39px;height:39px;border-radius:12px;background:var(--panel2);display:grid;place-items:center;font-size:18px;flex-shrink:0}.left{display:flex;align-items:center;gap:11px;min-width:0}.left strong{display:block;font-size:14px}.left small{display:block;color:var(--muted);font-size:12px;margin-top:4px}.amount{font-weight:700;white-space:nowrap}.nav{position:fixed;bottom:0;left:0;right:0;background:#101a2aee;backdrop-filter:blur(16px);border-top:1px solid var(--line);display:flex;justify-content:center;padding:9px 8px calc(9px + env(safe-area-inset-bottom));z-index:4}.navinner{display:flex;max-width:720px;width:100%;justify-content:space-around}.nav button{background:none;border:0;color:var(--muted);font-size:11px;padding:5px}.nav button span{display:block;font-size:20px;margin-bottom:3px}.nav button.active{color:var(--green)}.view{display:none}.view.active{display:block}label{display:block;color:var(--muted);font-size:12px;margin:13px 0 6px}input,select,textarea{width:100%;background:#0c1625;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:13px;font:inherit;outline:none}textarea{min-height:100px;resize:vertical}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.primary{width:100%;border:0;border-radius:12px;padding:14px;background:var(--green);color:#062016;font-weight:750;font-size:15px;margin-top:16px}.secondary{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:11px;padding:11px 13px}.account{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}.empty{text-align:center;padding:24px;color:var(--muted)}.note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}.tag{font-size:10px;border-radius:99px;padding:4px 7px;background:#24364b;color:#bdd1e8}.bar{height:8px;border-radius:9px;background:#24364b;overflow:hidden;margin-top:7px}.bar i{display:block;height:100%;background:var(--green);border-radius:9px}.hidden{display:none!important}
-</style></head>
-<body><main class="app">
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+
+<body>
+<section id="authGate" style="max-width:420px;margin:60px auto;padding:24px;color:white;font-family:Arial">
+  <h1>Finanzas Inteligentes</h1>
+  <p>Tu información financiera, segura y sincronizada.</p>
+
+  <label for="authEmail">Correo electrónico</label>
+  <input id="authEmail" type="email" placeholder="Tu correo">
+
+  <label for="authPassword">Contraseña</label>
+  <input id="authPassword" type="password" placeholder="Mínimo 6 caracteres">
+
+  <button class="primary" onclick="signIn()">Iniciar sesión</button>
+  <button class="secondary" onclick="signUp()" style="width:100%;margin-top:10px">
+    Crear cuenta
+  </button>
+  <button class="link" onclick="resetPassword()">Recuperar contraseña</button>
+  <p id="authMessage"></p>
+</section>
+
+<main class="app" id="appShell" style="display:none">
+
 <header class="top"><div><div class="brand">Tu centro financiero</div><h1>Finanzas Inteligentes</h1></div><div class="pill">MVP 1.1 · Personal</div></header>
 <section id="dashboard" class="view active">
 <div class="hero"><small>Balance neto registrado</small><div class="balance" id="net">$0</div><div class="stats"><div class="stat"><small>Ingresos del mes</small><strong class="green" id="income">$0</strong></div><div class="stat"><small>Gastos del mes</small><strong class="red" id="expense">$0</strong></div></div></div>
@@ -143,4 +164,86 @@ function useParsed(){
  window.pendingFingerprint=parsed.fingerprint;document.getElementById('message').value='';
 }
 function exportData(){let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='finanzas-inteligentes-respaldo.json';a.click();URL.revokeObjectURL(a.href)}function restoreData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!Array.isArray(d.accounts)||!Array.isArray(d.movements))throw 0;data=d;persist();render();alert('Respaldo importado.')}catch(_){alert('Archivo de respaldo no válido.')}};r.readAsText(f)}function resetData(){if(confirm('¿Borrar todos los movimientos y saldos locales? Esta acción no se puede deshacer.')){data={accounts:defaultAccounts.map(x=>({...x})),movements:[]};persist();render()}}document.getElementById('date').value=dateNow();render();
+
+const SUPABASE_URL = 'https://wwbclzosrkrkiumwnrcv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_LvXMeXijPuUIp-294lcjGw_IyrOOsAt';
+
+const sbClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+function authMessage(message) {
+  document.getElementById('authMessage').textContent = message;
+}
+
+async function signUp() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+
+  if (!email || password.length < 6) {
+    authMessage('Ingresa un correo y una contraseña de mínimo 6 caracteres.');
+    return;
+  }
+
+  const { error } = await sbClient.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: 'https://michaelmarin-cm.github.io/finanzas-inteligentes/'
+    }
+  });
+
+  authMessage(error ? error.message : 'Revisa tu correo para confirmar tu cuenta.');
+}
+
+async function signIn() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+
+  const { error } = await sbClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    authMessage(error.message);
+  }
+}
+
+async function resetPassword() {
+  const email = document.getElementById('authEmail').value.trim();
+
+  if (!email) {
+    authMessage('Primero escribe tu correo electrónico.');
+    return;
+  }
+
+  const { error } = await sbClient.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://michaelmarin-cm.github.io/finanzas-inteligentes/'
+  });
+
+  authMessage(error ? error.message : 'Te enviamos un correo para recuperar tu contraseña.');
+}
+
+async function checkSession() {
+  const { data: { session } } = await sbClient.auth.getSession();
+
+  const loggedIn = !!session;
+
+  document.getElementById('authGate').style.display =
+    loggedIn ? 'none' : 'block';
+
+  document.getElementById('appShell').style.display =
+    loggedIn ? 'block' : 'none';
+
+  document.querySelector('.nav').style.display =
+    loggedIn ? 'flex' : 'none';
+}
+
+sbClient.auth.onAuthStateChange(() => {
+  checkSession();
+});
+
+checkSession();
 </script></body></html>
