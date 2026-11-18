@@ -172,7 +172,42 @@ const sbClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
+async function syncAccounts(userId) {
+  const { data: remoteAccounts, error } = await sbClient
+    .from('accounts')
+    .select('id, name, currency, balance')
+    .eq('user_id', userId);
 
+  if (error) throw error;
+
+  for (const account of data.accounts) {
+    let remote = remoteAccounts.find(
+      a => a.name === account.name && a.currency === account.currency
+    );
+
+    if (!remote) {
+      const { data: created, error: insertError } = await sbClient
+        .from('accounts')
+        .insert({
+          user_id: userId,
+          name: account.name,
+          type: 'bank',
+          currency: account.currency,
+          balance: account.balance
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      remote = created;
+      remoteAccounts.push(remote);
+    }
+
+    account.supabaseId = remote.id;
+  }
+
+  persist();
+}
 function authMessage(message) {
   document.getElementById('authMessage').textContent = message;
 }
@@ -209,7 +244,14 @@ async function signIn() {
   if (error) {
     authMessage(error.message);
   }
-}
+  if (!error) {
+    try {
+      const { data: { user } } = await sbClient.auth.getUser();
+      if (user) await syncAccounts(user.id);
+    } catch (e) {
+      authMessage('Error al sincronizar: ' + e.message);
+    }
+  }}
 
 async function resetPassword() {
   const email = document.getElementById('authEmail').value.trim();
