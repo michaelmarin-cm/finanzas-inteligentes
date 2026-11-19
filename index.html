@@ -405,6 +405,7 @@ async function signIn() {
     try {
       const { data: { user } } = await sbClient.auth.getUser();
       if (user) await syncAccounts(user.id);
+      if (user) await syncMovements(user.id);
     } catch (e) {
       authMessage('Error al sincronizar: ' + e.message);
     }
