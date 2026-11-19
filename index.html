@@ -231,7 +231,118 @@ async function signUp() {
 
   authMessage(error ? error.message : 'Revisa tu correo para confirmar tu cuenta.');
 }
+async function sendMovementToCloud(x, userId) {
+  await syncAccounts(userId);
 
+  const account = data.accounts[x.account];
+  const toAccount = data.accounts[x.toAccount];
+
+  if (!account?.supabaseId) {
+    throw new Error('No se encontró el identificador de la cuenta.');
+  }
+
+  const { data: existing, error: searchError } = await sbClient
+    .from('movements')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('local_id', String(x.id))
+    .maybeSingle();
+
+  if (searchError) throw searchError;
+
+  if (!existing) {
+    const { error } = await sbClient.from('movements').insert({
+      user_id: userId,
+      local_id: String(x.id),
+      account_id: account.supabaseId,
+      to_account_id: x.type === 'transfer' ? toAccount?.supabaseId : null,
+      type: x.type,
+      amount: x.amount,
+      category: x.category,
+      description: x.description,
+      notes: x.notes,
+      date: x.date
+    });
+
+    if (error) throw error;
+  }
+
+  const { error: balanceError } = await sbClient
+    .from('accounts')
+    .update({ balance: account.balance })
+    .eq('id', account.supabaseId);
+
+  if (balanceError) throw balanceError;
+
+  if (x.type === 'transfer' && toAccount?.supabaseId) {
+    const { error } = await sbClient
+      .from('accounts')
+      .update({ balance: toAccount.balance })
+      .eq('id', toAccount.supabaseId);
+
+    if (error) throw error;
+  }
+}
+
+async function saveMovement() {
+  const type = document.getElementById('type').value;
+  const amount = Number(document.getElementById('amount').value);
+  const account = Number(document.getElementById('account').value);
+  const to = Number(document.getElementById('toAccount').value);
+  const currency = document.getElementById('currency').value;
+
+  if (!amount || amount < 0 ||
+      !document.getElementById('description').value.trim()) {
+    alert('Completa descripción y valor.');
+    return;
+  }
+
+  if (!data.accounts[account] ||
+      (type === 'transfer' && (!data.accounts[to] || account === to))) {
+    alert('Selecciona cuentas válidas para el movimiento.');
+    return;
+  }
+
+  const x = {
+    id: Date.now(),
+    type,
+    amount,
+    account,
+    toAccount: to,
+    currency,
+    description: document.getElementById('description').value.trim(),
+    category: document.getElementById('category').value,
+    date: document.getElementById('date').value || dateNow(),
+    notes: document.getElementById('notes').value,
+    fingerprint: window.pendingFingerprint || null
+  };
+
+  window.pendingFingerprint = null;
+  data.movements.push(x);
+
+  if (type === 'income' || type === 'refund') {
+    data.accounts[account].balance += amount;
+  } else if (type === 'expense' || type === 'investment') {
+    data.accounts[account].balance -= amount;
+  } else if (type === 'transfer') {
+    data.accounts[account].balance -= amount;
+    data.accounts[to].balance += amount;
+  }
+
+  persist();
+  show('dashboard');
+
+  try {
+    const { data: { user } } = await sbClient.auth.getUser();
+
+    if (!user) throw new Error('Inicia sesión nuevamente.');
+
+    await sendMovementToCloud(x, user.id);
+    alert('Movimiento guardado y sincronizado en la nube.');
+  } catch (error) {
+    alert('Se guardó en este dispositivo, pero falló la sincronización: ' + error.message);
+  }
+}
 async function signIn() {
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
