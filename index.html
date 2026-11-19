@@ -232,7 +232,52 @@ async function signUp() {
 
   authMessage(error ? error.message : 'Revisa tu correo para confirmar tu cuenta.');
 }
-async function sendMovementToCloud(x, userId) {
+async function syncMovements(userId) {
+  const { data: remoteMovements, error } = await sbClient
+    .from('movements')
+    .select('local_id, account_id, to_account_id, type, amount, category, description, notes, date, installments')
+    .eq('user_id', userId);
+
+  if (error) throw error;
+
+  for (const remote of remoteMovements) {
+    const exists = data.movements.some(
+      x => String(x.id) === String(remote.local_id)
+    );
+
+    if (exists) continue;
+
+    const accountIndex = data.accounts.findIndex(
+      a => a.supabaseId === remote.account_id
+    );
+
+    if (accountIndex < 0) {
+      throw new Error('No se encontró la cuenta de un movimiento.');
+    }
+
+    const toIndex = remote.to_account_id
+      ? data.accounts.findIndex(a => a.supabaseId === remote.to_account_id)
+      : -1;
+
+    data.movements.push({
+      id: Number(remote.local_id),
+      type: remote.type,
+      amount: Number(remote.amount),
+      account: accountIndex,
+      toAccount: toIndex,
+      currency: data.accounts[accountIndex].currency,
+      description: remote.description || '',
+      category: remote.category || 'Otros',
+      date: remote.date,
+      notes: remote.notes || '',
+      fingerprint: null
+    });
+  }
+
+  persist();
+  render();
+} 
+  async function sendMovementToCloud(x, userId) {
   await syncAccounts(userId);
 
   const account = data.accounts[x.account];
