@@ -204,6 +204,7 @@ async function syncAccounts(userId) {
     }
 
     account.supabaseId = remote.id;
+account.balance = Number(remote.balance) || 0;
   }
 
   persist();
