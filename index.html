@@ -278,7 +278,6 @@ async function syncMovements(userId) {
   render();
 } 
   async function sendMovementToCloud(x, userId) {
-  await syncAccounts(userId);
 
   const account = data.accounts[x.account];
   const toAccount = data.accounts[x.toAccount];
