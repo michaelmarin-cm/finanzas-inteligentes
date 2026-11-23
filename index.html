@@ -57,7 +57,9 @@
 <section id="movements" class="view"><div class="sectionhead"><h2>Todos los movimientos</h2><button class="link" onclick="openForm()">＋ Agregar</button></div><div class="card" id="allMovements"></div></section>
 <section id="accounts" class="view"><div class="sectionhead"><h2>Mis cuentas</h2></div><div class="card" id="allAccounts"></div><p class="note">Los saldos iniciales son editables. Configúralos con tus saldos reales antes de usar el balance como referencia.</p></section>
 <section id="import" class="view"><div class="sectionhead"><h2>Importar mensajes</h2></div><div class="card"><p class="muted">Pega un SMS o texto de una alerta bancaria. El reconocedor intentará identificar entidad, valor, tipo, comercio y categoría. Siempre podrás revisar antes de guardar.</p><label>Mensaje bancario</label><textarea id="message" placeholder="Ej. Compra aprobada por $45.900 en ..."></textarea><button class="secondary" onclick="parseMessage()">Analizar mensaje</button><div id="parseResult" class="hidden"><label>Resultado detectado</label><div id="parsedText" class="card"></div><button class="primary" onclick="useParsed()">Revisar y registrar</button></div><p class="note">En iPhone, los SMS se pueden canalizar mediante una automatización de Atajos compatible. Las notificaciones de otras apps no se pueden leer libremente. Esta pantalla no accede por sí sola a tus mensajes.</p></div></section>
-<section id="settings" class="view"><div class="sectionhead"><h2>Configuración</h2></div><div class="card"><label>Moneda principal de visualización</label><select id="mainCurrency" onchange="render()"><option>COP</option><option>USD</option><option>EUR</option></select><label>Respaldo de datos</label><button class="secondary" onclick="exportData()">Exportar copia JSON</button> <button class="secondary" onclick="document.getElementById('restore').click()">Importar copia</button><input id="restore" type="file" accept="application/json" class="hidden" onchange="restoreData(event)"><p class="note">No compartas archivos de respaldo ni mensajes con información sensible. La conversión entre monedas todavía no aplica tasas de cambio automáticas.</p><button class="secondary" style="color:var(--red);margin-top:12px" onclick="resetData()">Borrar todos los datos locales</button><button class="secondary" style="margin-top:12px" onclick="signOut()">Cerrar sesión</button></div></section>
+<section id="settings" class="view"><div class="sectionhead"><h2>Configuración</h2></div><div class="card"><label>Moneda principal de visualización</label><select id="mainCurrency" onchange="render()"><option>COP</option><option>USD</option><option>EUR</option></select><label>Respaldo de datos</label><button class="secondary" onclick="exportData()">Exportar copia JSON</button> <button class="secondary" onclick="document.getElementById('restore').click()">Importar copia</button><input id="restore" type="file" accept="application/json" class="hidden" onchange="restoreData(event)"><p class="note">No compartas archivos de respaldo ni mensajes con información sensible. La conversión entre monedas todavía no aplica tasas de cambio automáticas.</p></p>
+<button class="secondary" style="margin-top:12px" onclick="migrateLocalHistory()">Migrar historial a la nube</button>
+<button class="secondary" style="color:var(--red);margin-top:12px" onclick="resetData()">Borrar todos los datos locales</button><button class="secondary" style="margin-top:12px" onclick="signOut()">Cerrar sesión</button></div></section>
 </main><nav class="nav"><div class="navinner"><button class="active" data-view="dashboard" onclick="show('dashboard')"><span>⌂</span>Inicio</button><button data-view="movements" onclick="show('movements')"><span>⇄</span>Movimientos</button><button data-view="accounts" onclick="show('accounts')"><span>▣</span>Cuentas</button><button data-view="import" onclick="show('import')"><span>▤</span>Importar</button><button data-view="settings" onclick="show('settings')"><span>⚙</span>Ajustes</button></div></nav>
 <script>
 const KEY='fi_mvp_2';const defaultAccounts=[{name:'Bancolombia',currency:'COP',balance:0},{name:'Finandina',currency:'COP',balance:0},{name:'Nequi',currency:'COP',balance:0},{name:'Nu',currency:'COP',balance:0}];let data=load();let parsed=null;
@@ -326,6 +328,73 @@ async function syncMovements(userId) {
       .eq('id', toAccount.supabaseId);
 
     if (error) throw error;
+  }
+}
+
+async function migrateLocalHistory() {
+  if (!confirm('¿Deseas subir los movimientos de este dispositivo a la nube? Los saldos no se modificarán.')) {
+    return;
+  }
+
+  try {
+    const { data: { user }, error: userError } = await sbClient.auth.getUser();
+
+    if (userError) throw userError;
+    if (!user) throw new Error('Inicia sesión para continuar.');
+
+    const { data: remoteRows, error: searchError } = await sbClient
+      .from('movements')
+      .select('local_id')
+      .eq('user_id', user.id);
+
+    if (searchError) throw searchError;
+
+    const existingIds = new Set(
+      remoteRows.map(row => String(row.local_id))
+    );
+
+    let uploaded = 0;
+
+    for (const movement of data.movements) {
+      const localId = String(movement.id);
+
+      if (existingIds.has(localId)) continue;
+
+      const account = data.accounts[movement.account];
+
+      if (!account?.supabaseId) {
+        throw new Error('Falta sincronizar la cuenta: ' + (account?.name || 'desconocida'));
+      }
+
+      const toAccount = data.accounts[movement.toAccount];
+
+      if (movement.type === 'transfer' && !toAccount?.supabaseId) {
+        throw new Error('Falta sincronizar la cuenta de destino de una transferencia.');
+      }
+
+      const { error } = await sbClient.from('movements').insert({
+        user_id: user.id,
+        local_id: localId,
+        account_id: account.supabaseId,
+        to_account_id: movement.type === 'transfer' ? toAccount.supabaseId : null,
+        type: movement.type,
+        amount: movement.amount,
+        category: movement.category || 'Otros',
+        description: movement.description || '',
+        notes: movement.notes || '',
+        date: movement.date,
+        installments: movement.installments || null
+      });
+
+      if (error) throw error;
+
+      existingIds.add(localId);
+      uploaded++;
+    }
+
+    alert('Migración terminada. Movimientos nuevos subidos: ' + uploaded + '. Los saldos no fueron modificados.');
+  } catch (error) {
+    alert('La migración se detuvo: ' + error.message + '. Puedes volver a intentarlo; se omitirán los movimientos ya subidos.');
   }
 }
 
