@@ -454,4 +454,18 @@ sbClient.auth.onAuthStateChange(() => {
 });
 
 checkSession();
+  async function restoreCloudOnOpen() {
+  try {
+    const { data: { session } } = await sbClient.auth.getSession();
+
+    if (!session?.user) return;
+
+    await syncAccounts(session.user.id);
+    await syncMovements(session.user.id);
+  } catch (e) {
+    authMessage('Error al recuperar datos: ' + e.message);
+  }
+}
+
+restoreCloudOnOpen();
 </script></body></html>
